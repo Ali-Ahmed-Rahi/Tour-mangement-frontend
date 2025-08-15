@@ -8,9 +8,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import Password from "@/components/ui/Password";
+import config from "@/config";
 import { cn } from "@/lib/utils";
 import { useLoginMutation } from "@/redux/features/auth/auth.api";
-import { useForm, type FieldValues, type SubmitHandler } from "react-hook-form";
+import type {FieldValues, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -21,14 +24,31 @@ export function LoginForm({
   const navigate = useNavigate();
   const form = useForm();
   const [login] = useLoginMutation();
+
+
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
-    try {
+    console.log(data);
+    try { 
       const res = await login(data).unwrap();
       console.log(res);
+
+      if (res.success) {
+        toast.success("Logged In Successfully");
+        navigate("/");
+      }
+
     } catch (err) {
-      console.error(err);
+      console.error(err.data);
 
       if (err.status === 401) {
+        toast.error("Your account is not verified");
+        navigate("/verify", { state: data.email });
+      }
+      if (err.data.message === "Password does not match") {
+        toast.error("Invalid credentials");
+      }
+
+      if (err.data.message === "User is not verified") {
         toast.error("Your account is not verified");
         navigate("/verify", { state: data.email });
       }
@@ -71,12 +91,13 @@ export function LoginForm({
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input
+                    {/* <Input
                       type="password"
                       placeholder="********"
                       {...field}
                       value={field.value || ""}
-                    />
+                    /> */}
+                    <Password {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,6 +117,7 @@ export function LoginForm({
         </div>
 
         <Button
+          onClick={() => window.open(`${config.baseUrl}/auth/google`)}
           type="button"
           variant="outline"
           className="w-full cursor-pointer"
