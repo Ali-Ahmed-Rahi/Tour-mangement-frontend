@@ -1,32 +1,61 @@
 import App from "@/App";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import About from "@/pages/about";
+// import Analytics from "@/pages/Admin/Analytics";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Verify from "@/pages/Verify";
-import { createBrowserRouter } from "react-router";
+import { generateRoutes } from "@/utils/generateRoutes";
+import { createBrowserRouter, Navigate } from "react-router";
+import { adminSidebarItems } from "./adminSidebarItems";
+import { userSidebarItems } from "./userSidebarItems";
+import { withAuth } from "@/utils/withAuth";
+import { role } from "@/constants/role";
+import type { TRole } from "@/types";
+import Unauthorized from "@/pages/Unauthorized";
 
- export const router = createBrowserRouter([
+export const router = createBrowserRouter([
   {
-    // i can use element 
-    Component:App,
+    // also i can use element
+    Component: App,
     path: "/",
-    children:[
+    children: [
       {
-        Component:About,
-        path:"/about"
-      }
-    ]
+        Component: withAuth(About),
+        path: "/about",
+      },
+    ],
   },
   {
-    Component:Login,
-    path:"/login"
+    Component: withAuth(DashboardLayout, role.superAdmin as TRole),
+    path: "/admin",
+    children: [
+      { index: true, element: <Navigate to="/admin/analytics" /> },
+      ...generateRoutes(adminSidebarItems),
+    ],
   },
   {
-    Component:Register,
-    path:"/register"
+    Component: withAuth(DashboardLayout, role.user as TRole),
+    path: "/user",
+    children: [
+      { index: true, element: <Navigate to="/user/bookings" /> },
+      ...generateRoutes(userSidebarItems),
+    ],
   },
   {
-    Component:Verify,
-    path:"/verify"
+    Component: Login,
+    path: "/login",
+  },
+  {
+    Component: Register,
+    path: "/register",
+  },
+  {
+    Component: Verify,
+    path: "/verify",
+  },
+  {
+    Component: Unauthorized,
+    path: "/unauthorized",
   },
 ]);

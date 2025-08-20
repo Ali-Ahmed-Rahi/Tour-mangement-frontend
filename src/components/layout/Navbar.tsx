@@ -1,46 +1,49 @@
 // import Logo from "@/components/navbar-components/logo"
-import Logo from "@/assets/icons/Logo"
-import { Button } from "@/components/ui/button"
+import Logo from "@/assets/icons/Logo";
+import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-} from "@/components/ui/navigation-menu"
+} from "@/components/ui/navigation-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { ModeToggle } from "./mode-toggle"
-import { Link } from "react-router"
-import {authApi, useLogoutMutation, useUserInfoQuery } from "@/redux/features/auth/auth.api"
-import { useAppDispatch } from "@/redux/hook"
-
+} from "@/components/ui/popover";
+import { ModeToggle } from "./mode-toggle";
+import { Link } from "react-router";
+import {
+  authApi,
+  useLogoutMutation,
+  useUserInfoQuery,
+} from "@/redux/features/auth/auth.api";
+import { useAppDispatch } from "@/redux/hook";
+import { role } from "@/constants/role";
 
 // Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
-  { href: "/", label: "Home"},
-  { href: "/about", label: "About" },
-  { href: "#", label: "Pricing" },
-  { href: "#", label: "About" },
-]
+  { href: "/", label: "Home", role: "PUBLIC" },
+  { href: "/about", label: "About", role: "PUBLIC" },
+  { href: "/admin", label: "Dashboard", role: role.admin },
+  { href: "/admin", label: "DashBoard" ,role:role.superAdmin},
+  { href: "/user", label: "Dashboard", role: role.user },
+];
 
 export default function Navbar() {
+  const { data } = useUserInfoQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+  const [logout] = useLogoutMutation();
+  const dispatch = useAppDispatch();
 
-  const {data}=useUserInfoQuery(undefined,{refetchOnMountOrArgChange:true})
-  const [logout]=useLogoutMutation()
-  const dispatch=useAppDispatch()
-
-
-
-  const handleLogout=async()=>{
-    await logout(undefined)
-    dispatch(authApi.util.resetApiState())
-
-  }
+  const handleLogout = async () => {
+    await logout(undefined);
+    dispatch(authApi.util.resetApiState());
+  };
   console.log(data);
-  
+
   return (
     <header className="border-b px-4 md:px-6">
       <div className="flex h-16 items-center justify-between gap-4 container mx-auto">
@@ -86,10 +89,7 @@ export default function Navbar() {
                 <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
                   {navigationLinks.map((link, index) => (
                     <NavigationMenuItem key={index} className="w-full">
-                      <NavigationMenuLink
-                      asChild
-                        className="py-1.5"
-                      >
+                      <NavigationMenuLink asChild className="py-1.5">
                         <Link to={link.href}>{link.label}</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
@@ -104,20 +104,34 @@ export default function Navbar() {
               <Logo />
             </a>
 
-
-
             {/* Navigation menu */}
             <NavigationMenu className="max-md:hidden">
               <NavigationMenuList className="gap-2">
                 {navigationLinks.map((link, index) => (
-                  <NavigationMenuItem key={index}>
+                  <>
+                  {
+                  link.role === "PUBLIC" &&
+                    (<NavigationMenuItem key={index}>
                     <NavigationMenuLink
-                    asChild
+                      asChild
                       className="text-muted-foreground hover:text-primary py-1.5 font-medium"
                     >
                       <Link to={link.href}>{link.label}</Link>
                     </NavigationMenuLink>
-                  </NavigationMenuItem>
+                  </NavigationMenuItem>)
+                  }
+                  {
+                  link.role === data?.data?.role &&
+                    (<NavigationMenuItem key={index}>
+                    <NavigationMenuLink
+                      asChild
+                      className="text-muted-foreground hover:text-primary py-1.5 font-medium"
+                    >
+                      <Link to={link.href}>{link.label}</Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>)
+                  }
+                  </>
                 ))}
               </NavigationMenuList>
             </NavigationMenu>
@@ -128,14 +142,22 @@ export default function Navbar() {
           <ModeToggle></ModeToggle>
           <h2 className="text-green-500">{data?.data?.name}</h2>
 
-          {data?.data?.email && (<Button onClick={handleLogout} variant="outline"className="text-sm">
-            Logout
-          </Button>)}
-          {!data?.data?.email && (<Button asChild className="text-sm">
-            <Link to="/login">Login</Link>
-          </Button>)}
+          {data?.data?.email && (
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-sm"
+            >
+              Logout
+            </Button>
+          )}
+          {!data?.data?.email && (
+            <Button asChild className="text-sm">
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
-  )
+  );
 }
